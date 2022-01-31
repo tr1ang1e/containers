@@ -53,10 +53,10 @@ TEST_F (queue_container_tests, basic_cases)
       pQueue = push (pQueue, pNode);
     }
 
-  for (int i = counter - 1; i >= 0; --i)
+  for (int i = 0; i < counter; ++i)
     {
       Node* pNode = pop (pQueue);
-      ASSERT_NE (pNode->value, i);
+      ASSERT_EQ (pNode->value, i);
     }
 }
 
