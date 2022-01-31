@@ -34,9 +34,13 @@ TEST_F (queue_container_tests, special_cases)
   Node* pNode = pop (pQueue);
   ASSERT_EQ (pNode, nullptr);
 
-  // pop queue with one node behavior
+  // push node to empty queue
   Node* pNode1 = create_node (1);
   pQueue = push (pQueue, pNode1);
+  ASSERT_EQ(pQueue->head, pQueue->tail);
+
+
+  // pop queue with one node behavior
   Node* pNode2 = pop (pQueue);
   ASSERT_EQ (pNode1, pNode2);
   ASSERT_EQ (pQueue->head, nullptr);
