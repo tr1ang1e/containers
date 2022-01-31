@@ -23,6 +23,7 @@ protected:
   void
   TearDown () override
   {
+    free(pQueue);
   }
 
   ~queue_container_tests () {}
@@ -38,7 +39,6 @@ TEST_F (queue_container_tests, special_cases)
   Node* pNode1 = create_node (1);
   pQueue = push (pQueue, pNode1);
   ASSERT_EQ(pQueue->head, pQueue->tail);
-
 
   // pop queue with one node behavior
   Node* pNode2 = pop (pQueue);
@@ -61,6 +61,7 @@ TEST_F (queue_container_tests, basic_cases)
     {
       Node* pNode = pop (pQueue);
       ASSERT_EQ (pNode->value, i);
+      free(pNode);
     }
 }
 
