@@ -65,9 +65,10 @@ push_queuegen (QueueGen* pQueueGen, const void* pCont, size ContSize)
           pQueueGen->tail = pNode;
         }
     }
-  {
-    return false;
-  }
+  else
+    {
+      return false;
+    }
 
   return true;
 }
@@ -92,6 +93,8 @@ pop_queuegen (QueueGen* pQueueGen, void* pCont, size ContSize)
           pQueueGen->tail = NULL;
         }
 
+      // free memory of copied and popped node
+      free (pTemp->data);
       free (pTemp);
     }
   else
