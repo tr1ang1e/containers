@@ -6,30 +6,37 @@
 
 #define RBT_KEY_SIZE (256)
 
-enum COLOR
+typedef enum IS_BALANCED_E
+{
+  BALANCED,
+  ROT_LEFT,
+  ROT_RIGHT,
+} IS_BALANCED;
+
+typedef enum COLOR_E
 {
   BLACK,
   RED,
-} ;
+} COLOR;
 
 typedef struct RBTNodeS
 {
-  const char key[RBT_KEY_SIZE] ;
-  int data; // void* data;
+  char key[RBT_KEY_SIZE];
+  void* data; // void* data;
 
-  enum COLOR color;
+  COLOR color;
 
   struct RBTNodeS* left;
   struct RBTNodeS* right;
   struct RBTNodeS* parent;
 } RBTNode;
 
-const struct RBTNodeS NIL = { "", 0, BLACK, NULL, NULL, NULL };
+RBTNode NIL = { "", NULL, BLACK, NULL, NULL, NULL };
 
 bool rbt_init(RBTNode* pRoot);
 bool rbt_close(RBTNode* pRoot);
-bool rbt_insert(RBTNode* pRoot, int* pData, const char* key);
+bool rbt_insert(RBTNode* pRoot, void* pItem, size_t itemSize, const char* key);
 bool rbt_delete(RBTNode* pRoot, const char* key);
-bool rbt_get(RBTNode* pRoot, int* pData, const char* key);
+bool rbt_get(RBTNode* pRoot, void* pItem, size_t itemSize, const char* key);
 
 #endif // !__RBTREE__
