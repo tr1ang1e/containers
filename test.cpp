@@ -6,64 +6,43 @@ extern "C"
 #include "include/c/queue.h"
 }
 
-class queue_container_tests : public ::testing::Test
+class queue_tests : public ::testing::Test
 {
 public:
-  Queue* pQueue;
-
 protected:
-  queue_container_tests () {}
+  queue_tests () {}
 
   void
   SetUp () override
   {
-    pQueue = queue_init ();
   }
 
   void
   TearDown () override
   {
-    free (pQueue);
   }
 
-  ~queue_container_tests () {}
+  ~queue_tests () {}
 };
 
-TEST_F (queue_container_tests, special_cases)
+class rb_tree_tests : public ::testing::Test
 {
-  // pop empty queue behavior
-  Node* pNode = pop (pQueue);
-  ASSERT_EQ (pNode, nullptr);
+public:
+protected:
+  rb_tree_tests () {}
 
-  // push node to empty queue
-  Node* pNode1 = create_node (1);
-  pQueue = push (pQueue, pNode1);
-  ASSERT_EQ (pQueue->head, pQueue->tail);
+  void
+  SetUp () override
+  {
+  }
 
-  // pop queue with one node behavior
-  Node* pNode2 = pop (pQueue);
-  ASSERT_EQ (pNode1, pNode2);
-  ASSERT_EQ (pQueue->head, nullptr);
-  ASSERT_EQ (pQueue->tail, nullptr);
-}
+  void
+  TearDown () override
+  {
+  }
 
-TEST_F (queue_container_tests, basic_cases)
-{
-  int counter = 10;
-
-  for (int i = 0; i < counter; ++i)
-    {
-      Node* pNode = create_node (i);
-      pQueue = push (pQueue, pNode);
-    }
-
-  for (int i = 0; i < counter; ++i)
-    {
-      Node* pNode = pop (pQueue);
-      ASSERT_EQ (pNode->value, i);
-      free (pNode);
-    }
-}
+  ~rb_tree_tests () {}
+};
 
 int
 main (int argc, char* argv[])
