@@ -6,7 +6,11 @@ number      description
             + list_logic.c = linux kermel list ( <list.h> ) 
 
     2       + red-black tree interface defined
-            + some red-black tree private functions implemented       
+            + some red-black tree private functions implemented     
+
+    3       + most of red-black tree interface functions implemented
+            + most of red-black tree private functions implemented   
+            + .clang-format: 'BreakBeforeBraces: Allman'
 
 current     > reb-black tree impementation            
 
