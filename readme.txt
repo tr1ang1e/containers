@@ -12,11 +12,17 @@ number      description
             + most of red-black tree private functions implemented   
             + .clang-format: 'BreakBeforeBraces: Allman'
 
-current     > reb-black tree impementation            
+    4       + red-black tree interface is done
+            + approach of finding nodes is changed 
+            + red-black tree private functions implemented  
+            + .clang-format: 'AlwaysBreakAfterReturnType: None'
+
+current     > 
+            >           
 
 todo        - add conditional variables to thread-safety queue 
             - list implementation (+ to format.sh)
-            - tests for queue and list 
-
-
-                   
+            - tests for queue
+            - tests for list
+            - tests for red-black tree 
+            - make red-black tree thread-safety   

@@ -12,15 +12,9 @@ public:
 protected:
   queue_tests () {}
 
-  void
-  SetUp () override
-  {
-  }
+  void SetUp () override {}
 
-  void
-  TearDown () override
-  {
-  }
+  void TearDown () override {}
 
   ~queue_tests () {}
 };
@@ -31,21 +25,14 @@ public:
 protected:
   rb_tree_tests () {}
 
-  void
-  SetUp () override
-  {
-  }
+  void SetUp () override {}
 
-  void
-  TearDown () override
-  {
-  }
+  void TearDown () override {}
 
   ~rb_tree_tests () {}
 };
 
-int
-main (int argc, char* argv[])
+int main (int argc, char* argv[])
 {
   ::testing::InitGoogleTest (&argc, argv);
   return RUN_ALL_TESTS ();

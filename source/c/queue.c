@@ -6,8 +6,7 @@
 /************************************************************************
  *                                QUEUE                                 *
  ************************************************************************/
-static Node*
-create_node (const void* pItem, size_t itemSize)
+static Node* create_node (const void* pItem, size_t itemSize)
 {
   Node* pNode = NULL;
 
@@ -45,8 +44,7 @@ create_node (const void* pItem, size_t itemSize)
   return pNode;
 }
 
-bool
-queue_init (Queue* pQueue)
+bool queue_init (Queue* pQueue)
 {
   if (pQueue != NULL)
   {
@@ -59,8 +57,7 @@ queue_init (Queue* pQueue)
   return false;
 }
 
-bool
-queue_push (Queue* pQueue, const void* pItem, size_t itemSize)
+bool queue_push (Queue* pQueue, const void* pItem, size_t itemSize)
 {
   bool result = false;
 
@@ -96,8 +93,7 @@ queue_push (Queue* pQueue, const void* pItem, size_t itemSize)
   return result;
 }
 
-bool
-queue_pop (Queue* pQueue, void* pItem, size_t itemSize)
+bool queue_pop (Queue* pQueue, void* pItem, size_t itemSize)
 {
   bool result = false;
 
@@ -138,8 +134,7 @@ queue_pop (Queue* pQueue, void* pItem, size_t itemSize)
   return result;
 }
 
-bool
-queue_peek (Queue* pQueue, void* pItem, size_t itemSize)
+bool queue_peek (Queue* pQueue, void* pItem, size_t itemSize)
 {
   int result = false;
 
@@ -167,8 +162,7 @@ queue_peek (Queue* pQueue, void* pItem, size_t itemSize)
  *                             QUEUE_SAFE                               *
  ************************************************************************/
 
-bool
-queue_safe_init (QueueSafe* pQueue)
+bool queue_safe_init (QueueSafe* pQueue)
 {
   bool result = false;
 
@@ -195,8 +189,7 @@ queue_safe_init (QueueSafe* pQueue)
   return result;
 }
 
-bool
-queue_safe_close (QueueSafe* pQueue)
+bool queue_safe_close (QueueSafe* pQueue)
 {
   bool result = false;
 
@@ -226,8 +219,7 @@ queue_safe_close (QueueSafe* pQueue)
   return result;
 }
 
-bool
-queue_safe_push (QueueSafe* pQueue, const void* pItem, size_t itemSize)
+bool queue_safe_push (QueueSafe* pQueue, const void* pItem, size_t itemSize)
 {
   bool result = false;
 
@@ -243,8 +235,7 @@ queue_safe_push (QueueSafe* pQueue, const void* pItem, size_t itemSize)
   return result;
 }
 
-bool
-queue_safe_pop (QueueSafe* pQueue, void* pItem, size_t itemSize)
+bool queue_safe_pop (QueueSafe* pQueue, void* pItem, size_t itemSize)
 {
   bool result = false;
 
@@ -258,8 +249,7 @@ queue_safe_pop (QueueSafe* pQueue, void* pItem, size_t itemSize)
   return result;
 }
 
-bool
-queue_safe_peek (QueueSafe* pQueue, void* pItem, size_t itemSize)
+bool queue_safe_peek (QueueSafe* pQueue, void* pItem, size_t itemSize)
 {
   int result = false;
 
@@ -273,8 +263,7 @@ queue_safe_peek (QueueSafe* pQueue, void* pItem, size_t itemSize)
   return result;
 }
 
-bool
-queue_safe_push_with_notify (QueueSafe* pQueue, const void* pItem, size_t itemSize)
+bool queue_safe_push_with_notify (QueueSafe* pQueue, const void* pItem, size_t itemSize)
 {
   bool result = false;
 
@@ -290,14 +279,14 @@ queue_safe_push_with_notify (QueueSafe* pQueue, const void* pItem, size_t itemSi
   return result;
 }
 
-/* TODO: */ bool
-queue_safe_pop_with_wait (QueueSafe* pQueue, void* pItem, size_t itemSize, int timeoutMs)
+/* TODO: */ bool queue_safe_pop_with_wait (QueueSafe* pQueue, void* pItem,
+                                           size_t itemSize, int timeoutMs)
 {
   return false;
 }
 
-/* TODO: */ bool
-queue_safe_peek_with_wait (QueueSafe* pQueue, void* pItem, size_t itemSize, int timeoutMs)
+/* TODO: */ bool queue_safe_peek_with_wait (QueueSafe* pQueue, void* pItem,
+                                            size_t itemSize, int timeoutMs)
 {
   return false;
 }
