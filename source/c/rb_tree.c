@@ -217,7 +217,7 @@ static RBTNode* rbt_create_node (const void* pItem, size_t itemSize, const char*
     if (pData == NULL)
     {
       free (pNode);
-      pNode == NULL;
+      pNode = NULL;
       break;
     }
 
@@ -255,18 +255,19 @@ static void rbt_free_memory (RBTNode* pNode)
   free (pNode);
 }
 
-/* state before left rotation
- *
- *      Parent (don't know if Node == Parent.left or Parent.right)
- *        |
- *       Node
- *      /   \
- *    A      Temp
- *          /   \
- *         B     C
- */
 static void rbt_rot_left (RBTNode* pNode)
 {
+  /* state before left rotation
+   *
+   *      Parent (don't know if Node == Parent.left or Parent.right)
+   *        |
+   *       Node
+   *      /   \
+   *    A      Temp
+   *          /   \
+   *         B     C
+   */
+
   RBTNode* pTemp = pNode->right;
 
   // Node <-> B
@@ -293,18 +294,20 @@ static void rbt_rot_left (RBTNode* pNode)
   }
 }
 
-/* state before right rotation
- *
- *          Parent (don't know if Node == Parent.left or Parent.right)
- *             |
- *            Node
- *           /   \
- *       Temp     A
- *      /    \
- *     C      B
- */
 static void rbt_rot_right (RBTNode* pNode)
 {
+
+  /* state before right rotation
+   *
+   *          Parent (don't know if Node == Parent.left or Parent.right)
+   *             |
+   *            Node
+   *           /   \
+   *       Temp     A
+   *      /    \
+   *     C      B
+   */
+
   RBTNode* pTemp = pNode->left;
 
   // Node <-> B
@@ -357,9 +360,9 @@ static void rbt_insert_balance (RBTNode* pNode)
       // C is RED
       if (pNode->parent->parent->right->color == RED)
       {
-        pNode->parent->color = BLACK;                    // B
-        pNode->parent->parent->color == RED;             // A
-        pNode->parent->parent->right->color == BLACK;    // C
+        pNode->parent->color = BLACK;                   // B
+        pNode->parent->parent->color = RED;             // A
+        pNode->parent->parent->right->color = BLACK;    // C
 
         pNode = pNode->parent->parent;    // A is next we deal with
       }
@@ -383,9 +386,9 @@ static void rbt_insert_balance (RBTNode* pNode)
       // B is RED
       if (pNode->parent->parent->left->color == RED)
       {
-        pNode->parent->color = BLACK;                   // C
-        pNode->parent->parent->color == RED;            // A
-        pNode->parent->parent->left->color == BLACK;    // B
+        pNode->parent->color = BLACK;                  // C
+        pNode->parent->parent->color = RED;            // A
+        pNode->parent->parent->left->color = BLACK;    // B
 
         pNode = pNode->parent->parent;    // A is next we deal with
       }
@@ -498,7 +501,6 @@ static void rbt_delete_black_node (FoundInfo info)    // right case
       F->color = BLACK;
 
       (subtree == LEFT) ? rbt_rot_left (A) : rbt_rot_right (A);
-
       (subtree == LEFT) ? rbt_rot_right (pNode) : rbt_rot_left (pNode);
 
       break;
@@ -510,7 +512,6 @@ static void rbt_delete_black_node (FoundInfo info)    // right case
       C->color = BLACK;
 
       (subtree == LEFT) ? rbt_rot_left (A) : rbt_rot_right (A);
-
       (subtree == LEFT) ? rbt_rot_right (pNode) : rbt_rot_left (pNode);
 
       break;
@@ -527,6 +528,7 @@ static void rbt_delete_black_node (FoundInfo info)    // right case
       {
         info.pParent = pNode->parent;
         info.subtree = (pNode->parent->left == pNode) ? LEFT : RIGHT;
+        rbt_delete_black_node (info);
       }
 
       break;
@@ -626,7 +628,7 @@ static void rbt_delete_balance (FoundInfo info)
       pParent->right = &NIL;
     }
 
-    info.pNode == &NIL;
+    info.pNode = &NIL;
     rbt_delete_black_node (info);    // recursive function
   }
 
