@@ -17,6 +17,9 @@ number      description
             + red-black tree private functions implemented  
             + .clang-format: 'AlwaysBreakAfterReturnType: None'
 
+    5       + red-black::rbt_delete_black_node() excess nodes removed
+            + rb_tree.c syntax bugs fixed 
+
 current     > 
             >           
 

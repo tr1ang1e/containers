@@ -413,6 +413,7 @@ static void rbt_delete_black_node (FoundInfo info)    // right case
 {
   /* delete black node without children
    * balancing by using mirror subtree red nodes
+   * information = habr.com/ru/company/otus/blog/521034/
    *
    *           Node (info.pParent)
    *         /      \
@@ -429,8 +430,8 @@ static void rbt_delete_black_node (FoundInfo info)    // right case
    *          A        x       x        A
    *       /     \                   /     \
    *      B       C                 C       B
-   *    /  \     /  \             /  \     /  \
-   *   D    E   F    G           G    F   E    D
+   *             /  \             /  \       
+   *            D    E           E    D
    *
    *
    * attention! cases order matters, they are placed
@@ -445,18 +446,13 @@ static void rbt_delete_black_node (FoundInfo info)    // right case
   RBTNode* A = (subtree == LEFT) ? pNode->left : pNode->right;
   RBTNode* B = (subtree == LEFT) ? A->left : A->right;
   RBTNode* C = (subtree == LEFT) ? A->right : A->left;
-  RBTNode *D, *E, *F, *G;
+  RBTNode* D; 
+  RBTNode* E;
 
-  if (B != &NIL)    // D, E exist only if B is not a leaf
+  if (C != &NIL)    // D, E exist only if B is not a leaf
   {
-    D = (subtree == LEFT) ? B->left : B->right;
-    E = (subtree == LEFT) ? B->right : B->left;
-  }
-
-  if (C != &NIL)    // F, G exist only if B is not a leaf
-  {
-    F = (subtree == LEFT) ? C->left : C->right;
-    G = (subtree == LEFT) ? C->right : C->left;
+    D = (subtree == LEFT) ? C->left : C->right;
+    E = (subtree == LEFT) ? C->right : C->left;
   }
 
   do
@@ -484,8 +480,8 @@ static void rbt_delete_black_node (FoundInfo info)    // right case
     }
 
     // case 3
-    if (pNode->color == BLACK && A->color == RED && F->color == BLACK
-        && G->color == BLACK)
+    if (pNode->color == BLACK && A->color == RED && D->color == BLACK
+        && E->color == BLACK)
     {
       A->color = BLACK;
       C->color = RED;
@@ -496,9 +492,9 @@ static void rbt_delete_black_node (FoundInfo info)    // right case
     }
 
     // case 4
-    if (pNode->color == BLACK && A->color == RED && F->color == RED)
+    if (pNode->color == BLACK && A->color == RED && D->color == RED)
     {
-      F->color = BLACK;
+      D->color = BLACK;
 
       (subtree == LEFT) ? rbt_rot_left (A) : rbt_rot_right (A);
       (subtree == LEFT) ? rbt_rot_right (pNode) : rbt_rot_left (pNode);
@@ -517,7 +513,7 @@ static void rbt_delete_black_node (FoundInfo info)    // right case
       break;
     }
 
-    // case 6 (correct current context to the detriment of entire tree)
+    // case 6 (correct current context to the detriment of entire tree balance)
     if (pNode->color == BLACK && A->color == BLACK && B->color == BLACK
         && C->color == BLACK)
     {
