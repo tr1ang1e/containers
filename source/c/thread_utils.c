@@ -9,7 +9,6 @@ static void trace_last_error(const char* pMessage)
 	ERR("%s (%d - %s)", pMessage, errCode, strerror(errCode));
 }
 
-
 bool mutex_init(MUTEX_TYPE* mutex)
 {
 	if (INIT_MUTEX(*mutex) != 0)
@@ -54,8 +53,6 @@ bool mutex_unlock(MUTEX_TYPE* mutex)
 	return true;
 }
 
-
-/* TEMPORARILY UNUSED
 
 bool condition_init(CONDITION_TYPE* cond)
 {
@@ -106,10 +103,8 @@ bool condition_wait(CONDITION_TYPE* cond, MUTEX_TYPE* mutex, unsigned int timeou
 	bool received = false;
 
 	GENERATE_TIMESPEC(timeoutMs);
-	int waitResult = WAIT_CONDITION(*cond, mutex, ts);
+	int waitResult = WAIT_CONDITION(*cond, *mutex, ts);
 	received = waitResult == 0;
 
 	return received;
 }
-
-*/

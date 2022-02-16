@@ -18,14 +18,15 @@ number      description
             + .clang-format: 'AlwaysBreakAfterReturnType: None'
 
     5       + red-black::rbt_delete_black_node() excess nodes removed
-            + rb_tree.c syntax bugs fixed 
+            + rb_tree.c syntax bugs fixed
 
-current     > 
+    6       + conditional variables to thread-safety queue    
+            + tests for queue    
+
+current     > tests for red-black tree
             >           
 
-todo        - add conditional variables to thread-safety queue 
-            - list implementation (+ to format.sh)
-            - tests for queue
+todo        - list implementation (+ to format.sh)
             - tests for list
-            - tests for red-black tree 
-            - make red-black tree thread-safety   
+            
+            ? make red-black tree thread-safety   

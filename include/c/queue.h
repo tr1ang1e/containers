@@ -1,18 +1,19 @@
-#ifndef CONTAINERS_H
-#define CONTAINERS_H
+#ifndef QUEUE_H
+#define QUEUE_H
 
 #include "thread_utils.h"
 
-typedef struct NodeS
+typedef struct QueueItemS
 {
   void* data;
-  struct NodeS* next;
-} Node;
+  size_t dataSize;
+  struct QueueItemS* next;
+} QueueItem;
 
 typedef struct QueueS
 {
-  Node* head;    // pop from head
-  Node* tail;    // push to tail
+  QueueItem* head;    // pop from head
+  QueueItem* tail;    // push to tail
 } Queue;
 
 // tread-safety queue
@@ -30,58 +31,27 @@ typedef struct ListItemS
 {
   char key[LIST_ITEM_KEY_SIZE];
   void* data;
+  size_t dataSize;
 
   struct ListItemS* next;
   struct ListItemS* prev;
 } ListItem;
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+/************************************************************************
+ *                                QUEUES                                *
+ ************************************************************************/
+bool queue_init (Queue* pQueue);
+void queue_destroy (Queue* pQueue);
+bool queue_push (Queue* pQueue, const void* pItem, const size_t itemSize);
+bool queue_pop (Queue* pQueue, void* pItem, const size_t itemSize);
+bool queue_peek (Queue* pQueue, void* pItem, const size_t itemSize);
 
-  /************************************************************************
-   *                                QUEUE                                 *
-   ************************************************************************/
-  bool queue_init (Queue* pQueue);
-  bool queue_push (Queue* pQueue, const void* pItem, size_t itemSize);
-  bool queue_pop (Queue* pQueue, void* pItem, size_t itemSize);
-  bool queue_peek (Queue* pQueue, void* pItem, size_t itemSize);
+bool concurrent_queue_init (QueueSafe* pQueue);
+void concurrent_queue_destroy (QueueSafe* pQueue);
+bool concurrent_queue_push (QueueSafe* pQueue, const void* pItem, const size_t itemSize);
+bool concurrent_queue_pop (QueueSafe* pQueue, void* pItem, const size_t itemSize,
+                           const unsigned int asyncWaitMs);
+bool concurrent_queue_peek (QueueSafe* pQueue, void* pItem, const size_t itemSize,
+                            const unsigned int asyncWaitMs);
 
-  /************************************************************************
-   *                             QUEUE SAFE                               *
-   ************************************************************************/
-  bool queue_safe_init (QueueSafe* pQueue);
-  bool queue_safe_close (QueueSafe* pQueue);
-  bool queue_safe_push (QueueSafe* pQueue, const void* pItem, size_t itemSize);
-  bool queue_safe_push_with_notify (QueueSafe* pQueue, const void* pItem,
-                                    size_t itemSize);
-  bool queue_safe_pop (QueueSafe* pQueue, void* pItem, size_t itemSize);
-  bool queue_safe_peek (QueueSafe* pQueue, void* pItem, size_t itemSize);
-
-  // not implemented
-  bool queue_safe_pop_with_wait (QueueSafe* pQueue, void* pItem, size_t itemSize,
-                                 int timeoutMs);
-  bool queue_safe_peek_with_wait (QueueSafe* pQueue, void* pItem, size_t itemSize,
-                                  int timeoutMs);
-
-  /************************************************************************
-   *                                LIST                                  *
-   ************************************************************************/
-  ListItem* list_test_create_item (void* info);
-  void list_test_insert_item (ListItem** head, ListItem* pItem);
-  void list_test_remove_item (ListItem** head, ListItem* pItem);
-  ListItem* list_test_find_item (ListItem* head, void* info);
-
-  bool list_init (ListItem* pHead);
-  bool list_close (ListItem** pHead);
-  bool list_insert_item (ListItem** pHead, const void* pItem, size_t itemSize,
-                         const char* key);
-  bool list_get_item (ListItem* pHead, void* pItem, size_t itemSize, const char* key);
-  bool list_remove_item (ListItem** pHead, const char* key);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif    // !CONTAINERS_H
+#endif    // QUEUE_H

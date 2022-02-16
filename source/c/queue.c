@@ -6,9 +6,11 @@
 /************************************************************************
  *                                QUEUE                                 *
  ************************************************************************/
-static Node* create_node (const void* pItem, size_t itemSize)
+#define QUEUE_IS_EMPTY(queue) ((queue)->head == NULL)
+
+static QueueItem* create_node (const void* pItem, const size_t itemSize)
 {
-  Node* pNode = NULL;
+  QueueItem* pNode = NULL;
 
   do
   {
@@ -18,8 +20,7 @@ static Node* create_node (const void* pItem, size_t itemSize)
     }
 
     // allocate memory for node
-    pNode = (Node*)malloc (sizeof (Node));
-
+    pNode = (QueueItem*)malloc (sizeof (QueueItem));
     if (pNode == NULL)
     {
       break;
@@ -27,7 +28,6 @@ static Node* create_node (const void* pItem, size_t itemSize)
 
     // allocate memory for data
     void* pData = malloc (itemSize);
-
     if (pData == NULL)
     {
       free (pNode);
@@ -38,7 +38,9 @@ static Node* create_node (const void* pItem, size_t itemSize)
     memcpy (pData, pItem, itemSize);
 
     pNode->data = pData;
+    pNode->dataSize = itemSize;
     pNode->next = NULL;
+
   } while (0);
 
   return pNode;
@@ -57,7 +59,24 @@ bool queue_init (Queue* pQueue)
   return false;
 }
 
-bool queue_push (Queue* pQueue, const void* pItem, size_t itemSize)
+void queue_destroy (Queue* pQueue)
+{
+  if (pQueue != NULL)
+  {
+    while (pQueue->head != NULL)
+    {
+      QueueItem* pNode = pQueue->head;
+      pQueue->head = pQueue->head->next;
+
+      free (pNode->data);
+      free (pNode);
+    }
+
+    pQueue->tail = NULL;
+  }
+}
+
+bool queue_push (Queue* pQueue, const void* pItem, const size_t itemSize)
 {
   bool result = false;
 
@@ -68,15 +87,13 @@ bool queue_push (Queue* pQueue, const void* pItem, size_t itemSize)
       break;
     }
 
-    Node* pNode = create_node (pItem, itemSize);
-
+    QueueItem* pNode = create_node (pItem, itemSize);
     if (pNode == NULL)
     {
       break;
     }
 
-    // check if queue is empty
-    if (pQueue->head == NULL)
+    if (QUEUE_IS_EMPTY (pQueue))
     {
       pQueue->tail = pNode;
       pQueue->head = pNode;
@@ -88,38 +105,35 @@ bool queue_push (Queue* pQueue, const void* pItem, size_t itemSize)
     }
 
     result = true;
+
   } while (0);
 
   return result;
 }
 
-bool queue_pop (Queue* pQueue, void* pItem, size_t itemSize)
+bool queue_pop (Queue* pQueue, void* pItem, const size_t itemSize)
 {
   bool result = false;
 
   do
   {
-    if (pItem == NULL)
+    if (pItem == NULL || QUEUE_IS_EMPTY (pQueue))
     {
       break;
     }
 
-    Node* pNode = pQueue->head;
-
-    if (pNode == NULL)
+    // validate the requested item size
+    if (itemSize != pQueue->head->dataSize)
     {
       break;
     }
 
-    // get data
-    memcpy (pItem, pNode->data, itemSize);
+    memcpy (pItem, pQueue->head->data, itemSize);
 
-    // make queue's state actual
-    Node* pTemp = pQueue->head;
+    QueueItem* pTemp = pQueue->head;
     pQueue->head = pQueue->head->next;
 
-    // check if queue is empty
-    if (pQueue->head == NULL)
+    if (QUEUE_IS_EMPTY (pQueue))
     {
       pQueue->tail = NULL;
     }
@@ -129,23 +143,25 @@ bool queue_pop (Queue* pQueue, void* pItem, size_t itemSize)
     free (pTemp);
 
     result = true;
+
   } while (0);
 
   return result;
 }
 
-bool queue_peek (Queue* pQueue, void* pItem, size_t itemSize)
+bool queue_peek (Queue* pQueue, void* pItem, const size_t itemSize)
 {
   int result = false;
 
   do
   {
-    if (pQueue->head == NULL && pQueue->tail == NULL)
+    if (pItem == NULL || QUEUE_IS_EMPTY (pQueue))
     {
       break;
     }
 
-    if (pItem == NULL || pQueue->head == NULL)
+    // validate the requested item size
+    if (itemSize != pQueue->head->dataSize)
     {
       break;
     }
@@ -153,6 +169,7 @@ bool queue_peek (Queue* pQueue, void* pItem, size_t itemSize)
     memcpy (pItem, pQueue->head->data, itemSize);
 
     result = true;
+
   } while (0);
 
   return result;
@@ -162,108 +179,44 @@ bool queue_peek (Queue* pQueue, void* pItem, size_t itemSize)
  *                             QUEUE_SAFE                               *
  ************************************************************************/
 
-bool queue_safe_init (QueueSafe* pQueue)
+bool concurrent_queue_init (QueueSafe* pQueue)
 {
   bool result = false;
 
-  do
+  bool internalQueueInited = queue_init (&pQueue->queue);
+
+  if (internalQueueInited)
   {
-    if (pQueue == NULL)
+    if (mutex_init (&pQueue->mutex))
     {
-      break;
+      if (condition_init (&pQueue->cond))
+      {
+        result = true;
+      }
+      else
+      {
+        (void)mutex_destroy (&pQueue->mutex);
+      }
     }
-
-    if (!mutex_init (&pQueue->mutex))
-    {
-      break;
-    }
-
-    // if (!condition_init (&pQueue->cond))
-    //   {
-    //     break;
-    //   }
-
-    result = queue_init (&pQueue->queue);
-  } while (0);
+  }
 
   return result;
 }
 
-bool queue_safe_close (QueueSafe* pQueue)
+void concurrent_queue_destroy (QueueSafe* pQueue)
 {
-  bool result = false;
-
   if (mutex_lock (&pQueue->mutex))
   {
-    // free memory if queue is not empty
-    while (pQueue->queue.head != NULL)
-    {
-      Node* pNode = pQueue->queue.head;
-      pQueue->queue.head = pQueue->queue.head->next;
-
-      free (pNode->data);
-      free (pNode);
-    }
-
-    pQueue->queue.tail = NULL;
+    queue_destroy (&pQueue->queue);
 
     (void)mutex_unlock (&pQueue->mutex);
-
-    result = true;
 
     (void)mutex_destroy (&pQueue->mutex);
-
-    // (void)condition_destroy (&pQueue->cond);
+    (void)condition_destroy (&pQueue->cond);
   }
-
-  return result;
 }
 
-bool queue_safe_push (QueueSafe* pQueue, const void* pItem, size_t itemSize)
-{
-  bool result = false;
-
-  if (mutex_lock (&pQueue->mutex))
-  {
-    // push data
-    result = queue_push (&pQueue->queue, pItem, itemSize);
-
-    // unlock mutex
-    (void)mutex_unlock (&pQueue->mutex);
-  }
-
-  return result;
-}
-
-bool queue_safe_pop (QueueSafe* pQueue, void* pItem, size_t itemSize)
-{
-  bool result = false;
-
-  if (mutex_lock (&pQueue->mutex))
-  {
-    result = queue_pop (&pQueue->queue, pItem, itemSize);
-
-    (void)mutex_unlock (&pQueue->mutex);
-  }
-
-  return result;
-}
-
-bool queue_safe_peek (QueueSafe* pQueue, void* pItem, size_t itemSize)
-{
-  int result = false;
-
-  if (mutex_lock (&pQueue->mutex) == true)
-  {
-    result = queue_peek (&pQueue->queue, pItem, itemSize);
-
-    (void)mutex_unlock (&pQueue->mutex);
-  }
-
-  return result;
-}
-
-bool queue_safe_push_with_notify (QueueSafe* pQueue, const void* pItem, size_t itemSize)
+bool concurrent_queue_push (QueueSafe* pQueue, const void* pItem, const size_t itemSize)
 {
   bool result = false;
 
@@ -271,7 +224,10 @@ bool queue_safe_push_with_notify (QueueSafe* pQueue, const void* pItem, size_t i
   {
     result = queue_push (&pQueue->queue, pItem, itemSize);
 
-    // (void)condition_signal (pQueue->cond);
+    if (result)
+    {
+      (void)condition_broadcast (&pQueue->cond);
+    }
 
     (void)mutex_unlock (&pQueue->mutex);
   }
@@ -279,14 +235,69 @@ bool queue_safe_push_with_notify (QueueSafe* pQueue, const void* pItem, size_t i
   return result;
 }
 
-/* TODO: */ bool queue_safe_pop_with_wait (QueueSafe* pQueue, void* pItem,
-                                           size_t itemSize, int timeoutMs)
+bool concurrent_queue_pop (QueueSafe* pQueue, void* pItem, const size_t itemSize,
+                           const unsigned int asyncWaitMs)
 {
-  return false;
+  bool result = false;
+
+  if (mutex_lock (&pQueue->mutex))
+  {
+    Queue* pPrivateQueue = &pQueue->queue;
+
+    if (QUEUE_IS_EMPTY (pPrivateQueue))
+    {
+      // miss.. let's wait for items..
+      if (condition_wait (&pQueue->cond, &pQueue->mutex, asyncWaitMs))
+      {
+        /*
+          ok.. wake up signal was received and we are in the locked scope,
+          but it is possible that another waiter thread has already extracted the data
+          so, queue may be empty now - check again
+        */
+
+        if (!QUEUE_IS_EMPTY (pPrivateQueue))
+        {
+          result = queue_pop (pPrivateQueue, pItem, itemSize);
+        }
+      }
+    }
+    else
+    {
+      result = queue_pop (pPrivateQueue, pItem, itemSize);
+    }
+
+    (void)mutex_unlock (&pQueue->mutex);
+  }
+
+  return result;
 }
 
-/* TODO: */ bool queue_safe_peek_with_wait (QueueSafe* pQueue, void* pItem,
-                                            size_t itemSize, int timeoutMs)
+bool concurrent_queue_peek (QueueSafe* pQueue, void* pItem, const size_t itemSize,
+                            const unsigned int asyncWaitMs)
 {
-  return false;
+  bool result = false;
+
+  if (mutex_lock (&pQueue->mutex))
+  {
+    Queue* pPrivateQueue = &pQueue->queue;
+
+    if (QUEUE_IS_EMPTY (pPrivateQueue))
+    {
+      if (condition_wait (&pQueue->cond, &pQueue->mutex, asyncWaitMs))
+      {
+        if (!QUEUE_IS_EMPTY (pPrivateQueue))
+        {
+          result = queue_peek (pPrivateQueue, pItem, itemSize);
+        }
+      }
+    }
+    else
+    {
+      result = queue_peek (pPrivateQueue, pItem, itemSize);
+    }
+
+    (void)mutex_unlock (&pQueue->mutex);
+  }
+
+  return result;
 }

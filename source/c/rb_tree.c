@@ -430,7 +430,7 @@ static void rbt_delete_black_node (FoundInfo info)    // right case
    *          A        x       x        A
    *       /     \                   /     \
    *      B       C                 C       B
-   *             /  \             /  \       
+   *             /  \             /  \
    *            D    E           E    D
    *
    *
@@ -446,7 +446,7 @@ static void rbt_delete_black_node (FoundInfo info)    // right case
   RBTNode* A = (subtree == LEFT) ? pNode->left : pNode->right;
   RBTNode* B = (subtree == LEFT) ? A->left : A->right;
   RBTNode* C = (subtree == LEFT) ? A->right : A->left;
-  RBTNode* D; 
+  RBTNode* D;
   RBTNode* E;
 
   if (C != &NIL)    // D, E exist only if B is not a leaf
@@ -458,8 +458,7 @@ static void rbt_delete_black_node (FoundInfo info)    // right case
   do
   {
     // case 1 ('subtree' independent)
-    if (pNode->color == RED && A->color == BLACK && B->color == BLACK
-        && C->color == BLACK)
+    if (pNode->color == RED && A->color == BLACK && B->color == BLACK && C->color == BLACK)
     {
       pNode->color = BLACK;
       A->color = RED;
@@ -480,8 +479,7 @@ static void rbt_delete_black_node (FoundInfo info)    // right case
     }
 
     // case 3
-    if (pNode->color == BLACK && A->color == RED && D->color == BLACK
-        && E->color == BLACK)
+    if (pNode->color == BLACK && A->color == RED && D->color == BLACK && E->color == BLACK)
     {
       A->color = BLACK;
       C->color = RED;
@@ -514,8 +512,7 @@ static void rbt_delete_black_node (FoundInfo info)    // right case
     }
 
     // case 6 (correct current context to the detriment of entire tree balance)
-    if (pNode->color == BLACK && A->color == BLACK && B->color == BLACK
-        && C->color == BLACK)
+    if (pNode->color == BLACK && A->color == BLACK && B->color == BLACK && C->color == BLACK)
     {
       A->color = RED;
 
