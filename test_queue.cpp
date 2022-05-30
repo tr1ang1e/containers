@@ -6,7 +6,6 @@
 
 extern "C"
 {
-
 #include "include/c/queue.h"
 }
 

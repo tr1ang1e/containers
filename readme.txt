@@ -23,10 +23,13 @@ number      description
     6       + conditional variables to thread-safety queue    
             + tests for queue    
 
-current     > tests for red-black tree
-            >           
+    7       + tests for red-black tree (insert, get)
 
-todo        - list implementation (+ to format.sh)
+current     >
+		>           
+
+todo        - tests for red-black tree (delete, destroy)
+		- list implementation (+ to format.sh)
             - tests for list
             
             ? make red-black tree thread-safety   

@@ -4,55 +4,41 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define RBT_KEY_SIZE (256)
-
-typedef enum COLOR_E
-{
-  BLACK,
-  RED,
-} COLOR;
-
-typedef enum SUBTREE_E
-{
-  NONE,
-  LEFT,
-  RIGHT,
-} SUBTREE;
-
-typedef struct RBTNodeS
-{
-  char key[RBT_KEY_SIZE];
-  void* data;    // void* data;
-
-  COLOR color;
-
-  struct RBTNodeS* left;
-  struct RBTNodeS* right;
-  struct RBTNodeS* parent;
-} RBTNode;
-
-typedef struct FoundInfoS
-{
-  RBTNode* pParent;
-  RBTNode* pNode;
-  SUBTREE subtree;
-} FoundInfo;
-
-RBTNode NIL = { "", NULL, BLACK, NULL, NULL, NULL };
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-  bool rbt_init (RBTNode* pRoot);
-  bool rbt_close (RBTNode* pRoot);
-  bool rbt_insert (RBTNode** pRoot, void* pItem, size_t itemSize, const char* key);
-  bool rbt_delete (RBTNode** pRoot, const char* key);
-  bool rbt_get (RBTNode* pRoot, void* pItem, size_t itemSize, const char* key);
+  #define RBT_KEY_SIZE (256)
+
+  typedef enum COLOR_E
+  {
+    BLACK,
+    RED,
+  } COLOR;
+
+  typedef struct RBTNodeS
+  {
+    char key[RBT_KEY_SIZE];
+    void* data;
+
+    COLOR color;
+
+    struct RBTNodeS* left;
+    struct RBTNodeS* right;
+    struct RBTNodeS* parent;
+  } RBTNode;
+
+  EXPORT bool is_NIL_same (RBTNode* pNIL);
+  EXPORT bool rbt_destroy (RBTNode** pRoot);
+  EXPORT bool rbt_insert (RBTNode** pRoot, void* pItem, size_t itemSize, const char* key);
+  EXPORT bool rbt_get (RBTNode* pRoot, void* pItem, size_t itemSize, const char* key);
+  
+  // EXPORT bool rbt_init(RBTNode* pRoot);                          // no need without thread-safety approach
+  // EXPORT bool rbt_delete (RBTNode** pRoot, const char* key);     // not debugged yet
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif    // !__RBTREE__
+#endif    // __RBTREE__

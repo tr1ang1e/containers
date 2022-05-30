@@ -1,13 +1,183 @@
 #include <stdlib.h>
 #include <string.h>
-
 #include "../../include/c/rb_tree.h"
 
+
 /************************************************************************
- *                               PRIVATE                                *
+ *                              UTILS     	                            *
  ************************************************************************/
 
-static void rbt_actualize_root (RBTNode** pRoot)
+typedef enum SUBTREE_E
+{
+  NONE,
+  LEFT,
+  RIGHT,
+} SUBTREE;
+
+typedef struct FoundInfoS
+{
+  RBTNode* pParent;
+  RBTNode* pNode;
+  SUBTREE subtree;
+} FoundInfo;
+
+static RBTNode NIL = { "", NULL, BLACK, NULL, NULL, NULL };
+
+static void rbt_actualize_root (RBTNode** pRoot);
+static bool is_key_valid (const char* key);
+static FoundInfo rbt_find_node (RBTNode* pRoot, const char* key);
+static RBTNode* rbt_create_node (const void* pItem, size_t itemSize, const char* key);
+static void rbt_free_memory (RBTNode* pNode);
+static void rbt_rot_left (RBTNode* pNode);
+static void rbt_rot_right (RBTNode* pNode);
+static bool is_balance_broken (RBTNode* pNode);
+static void rbt_insert_balance (RBTNode* pNode);
+
+
+/************************************************************************
+ *                             PUBLIC    	                            *
+ ************************************************************************/
+
+bool is_NIL_same (RBTNode* pNIL) 
+{ 
+    return pNIL == &NIL; 
+}
+
+bool rbt_destroy (RBTNode** pRoot)
+{
+  bool result = false;
+
+  do
+  {
+    if (*pRoot == NULL)
+    {
+      break;
+    }
+
+    // destroy mutex
+
+    // destroy conditional
+
+    // free memory
+    rbt_free_memory (*pRoot);
+    *pRoot = NULL;
+
+    result = true;
+
+  } while (0);
+
+  return false;
+}
+
+bool rbt_insert (RBTNode** pRoot, void* pItem, size_t itemSize, const char* key)
+{
+  /* insertion place:
+   *   always to the NIL
+   *   exception: red-black tree is empty
+   */
+
+  bool result = false;
+
+  do
+  {
+    if (!is_key_valid (key))
+    {
+      break;
+    }
+
+    if (pItem == NULL)
+    {
+      break;
+    }
+
+    // search place to insert to
+    FoundInfo info = rbt_find_node (*pRoot, key);
+
+    if (info.pNode != NULL && info.pNode != &NIL)    // node with such key already exists
+    {
+      break;    // different logic might be implemented
+    }
+
+    RBTNode* pNode = rbt_create_node (pItem, itemSize, key);
+
+    if (pNode == NULL)    // error while creating node to insert
+    {
+      break;
+    }
+
+    if (*pRoot == NULL)    // insertion to root
+    {
+      pNode->color = BLACK;
+      *pRoot = pNode;
+    }
+    else
+    {
+      // insertion
+      pNode->parent = info.pParent;
+      if (info.subtree == LEFT)
+      {
+        info.pParent->left = pNode;
+      }
+      else
+      {
+        info.pParent->right = pNode;
+      }
+
+      // balansing
+      rbt_insert_balance (pNode);
+      rbt_actualize_root (pRoot);
+    }
+
+    result = true;
+
+  } while (0);
+
+  return result;
+}
+
+bool rbt_get (RBTNode* pRoot, void* pItem, size_t itemSize, const char* key)
+{
+  int result = false;
+
+  do
+  {
+    if (!is_key_valid (key))
+    {
+      break;
+    }
+
+    if (pItem == NULL)
+    {
+      break;
+    }
+
+    FoundInfo info = rbt_find_node (pRoot, key);
+
+    if (info.pNode == NULL)    // tree is empty
+    {
+      break;
+    }
+
+    if (info.pNode == &NIL)    // node was not found
+    {
+      break;
+    }
+
+    memcpy (pItem, info.pNode->data, itemSize);
+
+    result = true;
+
+  } while (0);
+
+  return result;
+}
+
+
+/************************************************************************
+ *                             STATIC    	                            *
+ ************************************************************************/
+
+void rbt_actualize_root (RBTNode** pRoot)
 {
   while ((*pRoot)->parent != NULL)
   {
@@ -17,7 +187,7 @@ static void rbt_actualize_root (RBTNode** pRoot)
   (*pRoot)->color = BLACK;
 }
 
-static bool is_key_valid (const char* key)
+bool is_key_valid (const char* key)
 {
   bool result = true;
 
@@ -31,11 +201,11 @@ static bool is_key_valid (const char* key)
   return result;
 }
 
-static FoundInfo rbt_find_node (RBTNode* pRoot, const char* key)
+FoundInfo rbt_find_node (RBTNode* pRoot, const char* key)
 {
   /*           variant                 description
    *
-   * >>  { NULL, NULL, NONE }    >>   key is not valid
+   * >>  { NULL, NULL, NONE }    >>   tree is empty
    * >>  { NULL, ROOT, NONE }    >>   found : node is root
    * >>  { ....  ....  .... }    >>   found : node is not root
    * >>  { ...., &NIL, .... }    >>   not found
@@ -46,7 +216,7 @@ static FoundInfo rbt_find_node (RBTNode* pRoot, const char* key)
 
   do
   {
-    if (!is_key_valid (key))
+    if (pRoot == NULL)
     {
       break;
     }
@@ -69,7 +239,7 @@ static FoundInfo rbt_find_node (RBTNode* pRoot, const char* key)
         info.pNode = info.pNode->right;
         info.subtree = RIGHT;
       }
-      else    // found , info is n actual state
+      else    // found , info is in actual state
       {
         break;
       }
@@ -80,117 +250,7 @@ static FoundInfo rbt_find_node (RBTNode* pRoot, const char* key)
   return info;
 }
 
-// old rbt_find implementation
-//
-// static RBTNode*
-// rbt_find_parent (RBTNode* pRoot, const char* key)
-// {
-//   /* peturn pointer to node which is
-//    * potentially a parent of necessary node
-//    *
-//    * variant 1 = necessary node was found
-//    * Parent.left or Parent.right points to node / call rbt_find_child()
-//    * result in:
-//    *    - success for rbt_find()
-//    *    - error for rbt_insert()
-//    *
-//    * variant 2 = necessary node was not found
-//    * at least one of Parent.left and Parent.right points to NIL / call rbt_find_child()
-//    * result in:
-//    *    - error for rbt_find()
-//    *    - success for rbt_insert()
-//    */
-//
-//   RBTNode* pTemp;
-//   RBTNode* pParent;
-//
-//   do
-//   {
-//     if (pRoot == NULL)
-//     {
-//       break;
-//     }
-//
-//     if (!is_key_valid (key))
-//     {
-//       break;
-//     }
-//
-//     pTemp = pRoot;
-//     pParent = NULL;
-//
-//     while (pTemp != &NIL)
-//     {
-//       int result = strcmp (pTemp->key, key);
-//
-//       if (result > 0)    // pTemp->key > key , go left
-//       {
-//         pParent = pTemp;
-//         pTemp = pTemp->left;
-//       }
-//       else if (result < 0)    // pTemp->key < key , go right
-//       {
-//         pParent = pTemp;
-//         pTemp = pTemp->right;
-//       }
-//       else    // found
-//       {
-//         break;
-//       }
-//     }
-//
-//   } while (0);
-//
-//   return pParent;
-// }
-//
-// static RBTNode**
-// rbt_find_child (RBTNode* pParent, const char* key)
-// {
-//   /* universal function, return:
-//    *    not pointer to child (because impossible to define is it right or left child)
-//    *    but pointer to (pointer to child) in parent (resultPtr)
-//    *
-//    *          (l) Parent (r)
-//    *          /            \
-//    *         A              B
-//    *
-//    * variant 1 = B wasn't found (NIL)
-//    *             return &(Parent.right)
-//    *             possible ckeck: if (*resultPtr == NIL) <insert>
-//    *
-//    * variant 2 = B was found
-//    *             return &(Parent.right)
-//    *             possible check: if (*resultPtr != NIL) <memcpy>
-//    *
-//    * resultPtr values possible meaning:
-//    *             >  (resultPtr == NULL) , found node is root
-//    *             >  (resultPtr != NULL) , variants:  1. (*resultPtr == &NIL) ,  node
-//    was not found
-//    *                                                 2. (*resultPtr != &NIL) ,  node
-//    was found
-//    */
-//
-//   RBTNode** resultPtr = NULL;
-//
-//   if (pParent != NULL)
-//   {
-//     int result = strcmp (pParent->key, key);
-//
-//     if (result > 0)
-//     {
-//       resultPtr = &(pParent->left);
-//     }
-//     else if (result < 0)
-//     {
-//       resultPtr = &(pParent->right);
-//     }
-//   }
-//
-//   return resultPtr;
-// }
-
-static RBTNode* rbt_create_node (const void* pItem, size_t itemSize, const char* key)
+RBTNode* rbt_create_node (const void* pItem, size_t itemSize, const char* key)
 {
   RBTNode* pNode = NULL;
 
@@ -202,8 +262,7 @@ static RBTNode* rbt_create_node (const void* pItem, size_t itemSize, const char*
     }
 
     // no need to check if key is valid
-    // it was already checked in rbt_find()
-    // called from rbt_insert() before rbt_create_node()
+    // it was already checked in caller = rbt_insert()
 
     // allocate memory for node
     pNode = (RBTNode*)malloc (sizeof (RBTNode));
@@ -224,6 +283,7 @@ static RBTNode* rbt_create_node (const void* pItem, size_t itemSize, const char*
     // key and data
     strcpy (pNode->key, key);
     memcpy (pData, pItem, itemSize);
+    pNode->data = pData;
 
     // default settings
     pNode->color = RED;
@@ -236,7 +296,7 @@ static RBTNode* rbt_create_node (const void* pItem, size_t itemSize, const char*
   return pNode;
 }
 
-static void rbt_free_memory (RBTNode* pNode)
+void rbt_free_memory (RBTNode* pNode)
 {
   // depth-first = left sub-tree
   if (pNode->left != &NIL)
@@ -255,7 +315,7 @@ static void rbt_free_memory (RBTNode* pNode)
   free (pNode);
 }
 
-static void rbt_rot_left (RBTNode* pNode)
+void rbt_rot_left (RBTNode* pNode)
 {
   /* state before left rotation
    *
@@ -269,37 +329,39 @@ static void rbt_rot_left (RBTNode* pNode)
    */
 
   RBTNode* pTemp = pNode->right;
+  RBTNode* pParent = pNode->parent;
 
-  // Node <-> B
-  pNode->right = pTemp->left;
-  pNode->right->parent = pNode;
-
-  pTemp->parent = pNode->parent;
-
-  // Temp <-> Node
-  pTemp->left = pNode;
+  // Node and B
   pNode->parent = pTemp;
-
-  // actualize Parent state
-  if (pNode->parent != NULL)
+  pNode->right = pTemp->left;
+  if (pNode->right != &NIL)
   {
-    if (pNode->parent->left == pNode)
+    pNode->right->parent = pNode;
+  }
+
+  // Temp
+  pTemp->parent = pParent;
+  pTemp->left = pNode;
+
+  // Parent
+  if (pParent != NULL)
+  {
+    if (pParent->left == pNode)
     {
-      pNode->parent->left = pTemp;
+      pParent->left = pTemp;
     }
     else
     {
-      pNode->parent->right = pTemp;
+      pParent->right = pTemp;
     }
   }
 }
 
-static void rbt_rot_right (RBTNode* pNode)
+void rbt_rot_right (RBTNode* pNode)
 {
-
   /* state before right rotation
    *
-   *          Parent (don't know if Node == Parent.left or Parent.right)
+   *           Parent (don't know if Node == Parent.left or Parent.right)
    *             |
    *            Node
    *           /   \
@@ -309,34 +371,69 @@ static void rbt_rot_right (RBTNode* pNode)
    */
 
   RBTNode* pTemp = pNode->left;
+  RBTNode* pParent = pNode->parent;
 
-  // Node <-> B
-  pNode->left = pTemp->right;
-  pNode->left->parent = pNode;
-
-  pTemp->parent = pNode->parent;
-
-  // Temp <-> Node
-  pTemp->right = pNode;
+  // Node and B
   pNode->parent = pTemp;
-
-  // actualize Parent state
-  if (pNode->parent != NULL)
+  pNode->left = pTemp->right;
+  if (pNode->right != &NIL)
   {
-    if (pNode->parent->left == pNode)
+    pNode->left->parent = pNode;
+  }
+
+  // Temp
+  pTemp->parent = pParent;
+  pTemp->right = pNode;
+
+  // Parent
+  if (pParent != NULL)
+  {
+    if (pParent->left == pNode)
     {
-      pNode->parent->left = pTemp;
+      pParent->left = pTemp;
     }
     else
     {
-      pNode->parent->right = pTemp;
+      pParent->right = pTemp;
     }
   }
 }
 
-static void rbt_insert_balance (RBTNode* pNode)
+bool is_balance_broken (RBTNode* pNode)
 {
-  /* possible state after insertion
+  bool result = false;
+
+  do
+  {
+    if (pNode == NULL)
+    {
+      break;
+    }
+
+    if (pNode->color == BLACK)
+    {
+      break;
+    }
+
+    if (pNode->parent == NULL)
+    {
+      break;
+    }
+
+    if (pNode->parent->color == BLACK)
+    {
+      break;
+    }
+
+    result = true;
+  } while (0);
+
+  return result;
+}
+
+void rbt_insert_balance (RBTNode* pNode)
+{
+  /* possible state after insertion (X == pNode)
    *
    *  v1       A           v2        A
    *         /   \                 /   \
@@ -352,9 +449,9 @@ static void rbt_insert_balance (RBTNode* pNode)
    *            X                         X
    */
 
-  while (pNode->parent != NULL && pNode->parent->color == RED)
+  while (is_balance_broken(pNode))
   {
-    // v1, v2: B on the LEFT of A
+    // v1, v2: X on the LEFT of A
     if (pNode->parent == pNode->parent->parent->left)
     {
       // C is RED
@@ -366,21 +463,25 @@ static void rbt_insert_balance (RBTNode* pNode)
 
         pNode = pNode->parent->parent;    // A is next we deal with
       }
-      // C is BLACK = impossible to be immidiately after insertion
+      // C is BLACK = impossible to be immidiately after insertion,
+      // exception: C is NIL
       else
       {
         // v1: X on the RIGHT of B
         if (pNode == pNode->parent->right)
         {
           rbt_rot_left (pNode->parent);
+          pNode = pNode->left;    // to make following code universal
         }
 
-        pNode->color = BLACK;
-        pNode->parent->color = RED;
-        rbt_rot_right (pNode->parent);
+        pNode->parent->color = BLACK;
+        pNode->parent->parent->color = RED;
+        rbt_rot_right (pNode->parent->parent);
+
+        pNode = pNode->parent;
       }
     }
-    // v3, v4: B on the RIGHT of A
+    // v3, v4: X on the RIGHT of A
     else
     {
       // B is RED
@@ -393,22 +494,63 @@ static void rbt_insert_balance (RBTNode* pNode)
         pNode = pNode->parent->parent;    // A is next we deal with
       }
       // B is BLACK = impossible to be immidiately after insertion
+      // exception: B is NIL
       else
       {
         // v3: X on the LEFT of C
         if (pNode == pNode->parent->left)
         {
           rbt_rot_right (pNode->parent);
+          pNode = pNode->right;    // to make following code universal
         }
 
-        pNode->color = BLACK;
-        pNode->parent->color = RED;
-        rbt_rot_left (pNode->parent);
+        // [ backup : 16.02.2022 ]
+        // pNode->color = BLACK;
+        // pNode->parent->color = RED;
+        // rbt_rot_left(pNode->parent->parent);
+
+        pNode->parent->color = BLACK;
+        pNode->parent->parent->color = RED;
+        rbt_rot_left (pNode->parent->parent);
+
+        pNode = pNode->parent;
       }
     }
   }
 }
 
+
+/************************************************************************
+ *                           UNAVAILABLE   	                            *
+ ************************************************************************/
+
+// no need without thread-safety approach
+bool rbt_init (RBTNode* pRoot)  
+{
+  bool result = false;
+
+  do
+  {
+    if (pRoot == NULL)
+    {
+      break;
+    }
+
+    memset (pRoot->key, '\0', RBT_KEY_SIZE);
+    pRoot->data = NULL;
+    pRoot->color = BLACK;
+    pRoot->left = &NIL;
+    pRoot->right = &NIL;
+    pRoot->parent = NULL;
+
+    result = true;
+
+  } while (0);
+
+  return result;
+}
+
+// not debugged yet
 static void rbt_delete_black_node (FoundInfo info)    // right case
 {
   /* delete black node without children
@@ -446,8 +588,8 @@ static void rbt_delete_black_node (FoundInfo info)    // right case
   RBTNode* A = (subtree == LEFT) ? pNode->left : pNode->right;
   RBTNode* B = (subtree == LEFT) ? A->left : A->right;
   RBTNode* C = (subtree == LEFT) ? A->right : A->left;
-  RBTNode* D;
-  RBTNode* E;
+  RBTNode* D = NULL;
+  RBTNode* E = NULL;
 
   if (C != &NIL)    // D, E exist only if B is not a leaf
   {
@@ -479,7 +621,8 @@ static void rbt_delete_black_node (FoundInfo info)    // right case
     }
 
     // case 3
-    if (pNode->color == BLACK && A->color == RED && D->color == BLACK && E->color == BLACK)
+    if (pNode->color == BLACK && A->color == RED && D->color == BLACK
+        && E->color == BLACK)    // DENGEROUS, CHECK IF LOGIC CORRECT
     {
       A->color = BLACK;
       C->color = RED;
@@ -490,7 +633,8 @@ static void rbt_delete_black_node (FoundInfo info)    // right case
     }
 
     // case 4
-    if (pNode->color == BLACK && A->color == RED && D->color == RED)
+    if (pNode->color == BLACK && A->color == RED
+        && D->color == RED)    // DENGEROUS, CHECK IF LOGIC CORRECT
     {
       D->color = BLACK;
 
@@ -529,7 +673,6 @@ static void rbt_delete_black_node (FoundInfo info)    // right case
 
   } while (0);
 }
-
 static void rbt_delete_balance (FoundInfo info)
 {
   /* description
@@ -628,136 +771,20 @@ static void rbt_delete_balance (FoundInfo info)
   free (pNode->data);
   free (pNode);
 }
-
-/************************************************************************
- *                               PUBLIC                                 *
- ************************************************************************/
-
-bool rbt_init (RBTNode* pRoot)
-{
-  bool result = false;
-
-  do
-  {
-    if (pRoot == NULL)
-    {
-      break;
-    }
-
-    memset (pRoot->key, '\0', RBT_KEY_SIZE);
-    pRoot->data = NULL;
-    pRoot->color = BLACK;
-    pRoot->left = NULL;
-    pRoot->right = NULL;
-    pRoot->parent = NULL;
-
-    result = true;
-
-  } while (0);
-
-  return result;
-}
-
-bool rbt_close (RBTNode* pRoot)
-{
-  bool result = false;
-
-  do
-  {
-    // destoy mutex
-
-    // destroy conditional
-
-    // free memory
-    rbt_free_memory (pRoot);
-
-    result = true;
-
-  } while (0);
-
-  return false;
-}
-
-bool rbt_insert (RBTNode** pRoot, void* pItem, size_t itemSize, const char* key)
-{
-  /* insertion place:
-   *   always to the NIL
-   *   exception = red-black tree is empty
-   */
-
-  bool result = false;
-
-  do
-  {
-    if (pItem == NULL)
-    {
-      break;
-    }
-
-    // search place to insert to
-    FoundInfo info = rbt_find_node (*pRoot, key);
-
-    if (info.pNode == NULL)    // key is not valid
-    {
-      break;
-    }
-
-    if (info.pNode != &NIL)    // node with such key already exists
-    {
-      break;    // different logic might be implemented
-    }
-
-    RBTNode* pNode = rbt_create_node (pItem, itemSize, key);
-
-    if (pNode == NULL)    // error while creating node to insert
-    {
-      break;
-    }
-
-    if (*pRoot == NULL)    // insertion to root
-    {
-      pNode->color = BLACK;
-      *pRoot = pNode;
-    }
-    else
-    {
-      // insertion
-      pNode->parent = info.pParent;
-      if (info.subtree == LEFT)
-      {
-        info.pParent->left = pNode;
-      }
-      else
-      {
-        info.pParent->right = pNode;
-      }
-
-      // balansing
-      rbt_insert_balance (pNode);
-      rbt_actualize_root (pRoot);
-    }
-
-    result = true;
-
-  } while (0);
-
-  return result;
-}
-
 bool rbt_delete (RBTNode** pRoot, const char* key)
 {
   bool result = false;
 
   do
   {
-    if (*pRoot == NULL)
+    if (!is_key_valid (key))
     {
       break;
     }
 
     FoundInfo info = rbt_find_node (*pRoot, key);
 
-    if (info.pNode == NULL)    // key is not valid
+    if (info.pNode == NULL)    // tree is empty
     {
       break;
     }
@@ -804,43 +831,6 @@ bool rbt_delete (RBTNode** pRoot, const char* key)
     }
 
     rbt_actualize_root (pRoot);
-
-    result = true;
-
-  } while (0);
-
-  return result;
-}
-
-bool rbt_get (RBTNode* pRoot, void* pItem, size_t itemSize, const char* key)
-{
-  int result = false;
-
-  do
-  {
-    if (pRoot == NULL)
-    {
-      break;
-    }
-
-    if (pItem == NULL)
-    {
-      break;
-    }
-
-    FoundInfo info = rbt_find_node (pRoot, key);
-
-    if (info.pNode == NULL)    // key is invalid
-    {
-      break;
-    }
-
-    if (info.pNode == &NIL)    // node was not found
-    {
-      break;
-    }
-
-    memcpy (pItem, info.pNode->data, itemSize);
 
     result = true;
 
